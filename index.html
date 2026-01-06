@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lulu - Shiojiri Sync</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Hiragino Mincho ProN", serif; }
+        
+        #bg {
+            width: 100%; height: 100%;
+            transition: background 10s ease; /* ゆっくりと空の色が変わる */
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #setup { position: absolute; top: 15%; color: #4a5568; text-align: center; background: rgba(255,255,255,0.4); padding: 20px; border-radius: 15px; backdrop-filter: blur(5px); }
+        input, button { padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
+        button { background: #4a5568; color: white; cursor: pointer; }
+
+        #core-star {
+            width: 140px; height: 140px; background: white; border-radius: 50%;
+            filter: blur(30px); opacity: 0.5; cursor: pointer; display: none;
+            box-shadow: 0 0 50px rgba(255,255,255,0.8);
+        }
+
+        .message { position: absolute; width: 85%; text-align: center; opacity: 0; transition: opacity 2s ease; color: #2d3748; pointer-events: none; }
+        #layer1 { font-size: 1.8rem; top: 35%; }
+        #layer2 { font-size: 1.1rem; top: 52%; font-style: italic; }
+
+        /* 塩尻の静寂を演出する微細な塵（パーティクル） */
+        .particle { position: absolute; background: white; border-radius: 50%; opacity: 0.3; pointer-events: none; }
+    </style>
+</head>
+<body onload="updateSky()">
+
+<div id="bg">
+    <div id="setup">
+        <p>塩尻の空と、あなたの星を結びます</p>
+        <input type="date" id="birthday" value="1969-09-28">
+        <br>
+        <button onclick="initLulu()">アプリを起動する</button>
+    </div>
+
+    <div id="core-star"></div>
+    <div id="layer1" class="message"></div>
+    <div id="layer2" class="message"></div>
+</div>
+
+<script>
+    // 現在の塩尻の時刻に基づいて空の色を決定する
+    function updateSky() {
+        const hour = new Date().getHours();
+        const bg = document.getElementById('bg');
+        let color;
+        
+        if (hour >= 5 && hour < 8) color = "linear-gradient(to bottom, #ffafbd, #ffc3a0)"; // 朝焼け
+        else if (hour >= 8 && hour < 16) color = "linear-gradient(to bottom, #a5c9e1, #e0eafc)"; // 昼
+        else if (hour >= 16 && hour < 19) color = "linear-gradient(to bottom, #4b6cb7, #182848)"; // 夕暮れ
+        else color = "linear-gradient(to bottom, #0f2027, #203a43, #2c5364)"; // 夜
+        
+        bg.style.background = color;
+    }
+
+    function initLulu() {
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('core-star').style.display = 'block';
+        createParticles();
+    }
+
+    function createParticles() {
+        for(let i=0; i<30; i++) {
+            let p = document.createElement('div');
+            p.className = 'particle';
+            let size = Math.random() * 4 + 'px';
+            p.style.width = size; p.style.height = size;
+            p.style.top = Math.random() * 100 + '%';
+            p.style.left = Math.random() * 100 + '%';
+            document.body.appendChild(p);
+        }
+    }
+
+    const star = document.getElementById('core-star');
+    const l1 = document.getElementById('layer1');
+    const l2 = document.getElementById('layer2');
+
+    function start() {
+        l1.innerText = "生命（いのち）を信じて。";
+        l2.innerText = "凍った土の下で、春を待つ鼓動を感じて。\n大丈夫。";
+        l1.style.opacity = '1';
+        setTimeout(() => { l2.style.opacity = '1'; }, 2500);
+    }
+
+    function end() {
+        l1.style.opacity = '0'; l2.style.opacity = '0';
+    }
+
+    star.addEventListener('mousedown', start);
+    star.addEventListener('touchstart', (e) => { e.preventDefault(); start(); });
+    window.addEventListener('mouseup', end);
+    window.addEventListener('touchend', end);
+</script>
+</body>
+</html>
