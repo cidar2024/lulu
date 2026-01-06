@@ -3,80 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lulu - Shiojiri Sync</title>
+    <title>Lulu - Shiojiri Cosmos</title>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Hiragino Mincho ProN", serif; }
-        
-        #bg {
-            width: 100%; height: 100%;
-            transition: background 10s ease; /* ゆっくりと空の色が変わる */
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        #setup { position: absolute; top: 15%; color: #4a5568; text-align: center; background: rgba(255,255,255,0.4); padding: 20px; border-radius: 15px; backdrop-filter: blur(5px); }
-        input, button { padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
-        button { background: #4a5568; color: white; cursor: pointer; }
-
-        #core-star {
-            width: 140px; height: 140px; background: white; border-radius: 50%;
-            filter: blur(30px); opacity: 0.5; cursor: pointer; display: none;
-            box-shadow: 0 0 50px rgba(255,255,255,0.8);
-        }
-
-        .message { position: absolute; width: 85%; text-align: center; opacity: 0; transition: opacity 2s ease; color: #2d3748; pointer-events: none; }
-        #layer1 { font-size: 1.8rem; top: 35%; }
-        #layer2 { font-size: 1.1rem; top: 52%; font-style: italic; }
-
-        /* 塩尻の静寂を演出する微細な塵（パーティクル） */
-        .particle { position: absolute; background: white; border-radius: 50%; opacity: 0.3; pointer-events: none; }
+        #bg { width: 100%; height: 100%; transition: all 8s ease; display: flex; justify-content: center; align-items: center; background: #000; }
+        #setup { position: absolute; z-index: 10; color: #4a5568; text-align: center; background: rgba(255,255,255,0.7); padding: 30px; border-radius: 20px; backdrop-filter: blur(15px); width: 80%; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        input, button { padding: 12px; margin-top: 15px; border-radius: 10px; border: 1px solid #ccc; font-size: 1rem; width: 100%; box-sizing: border-box; }
+        button { background: #4a5568; color: white; cursor: pointer; border: none; font-weight: bold; }
+        .message { position: absolute; width: 90%; text-align: center; opacity: 0; transition: opacity 2.5s ease; color: #2d3748; pointer-events: none; left: 5%; letter-spacing: 0.1em; }
+        #layer1 { top: 18%; font-size: 1.6rem; font-weight: bold; }
+        #layer2 { bottom: 20%; font-size: 1.1rem; line-height: 2; }
+        #core-star { width: 110px; height: 110px; background: white; border-radius: 50%; filter: blur(25px); opacity: 0.5; cursor: pointer; display: none; box-shadow: 0 0 50px rgba(255,255,255,0.8); z-index: 5; }
+        .weather-effect { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+        .amber { color: #b45309 !important; text-shadow: 0 0 12px rgba(255,191,0,0.5); }
     </style>
 </head>
-<body onload="updateSky()">
-
+<body>
 <div id="bg">
+    <div id="weather" class="weather-effect"></div>
     <div id="setup">
-        <p>塩尻の空と、あなたの星を結びます</p>
+        <p style="margin:0">Lulu</p>
+        <p style="font-size:0.8rem; opacity:0.7;">塩尻の空と、あなたの星を結ぶ</p>
         <input type="date" id="birthday" value="1969-09-28">
-        <br>
-        <button onclick="initLulu()">アプリを起動する</button>
+        <button onclick="initLulu()">星の静寂へ</button>
     </div>
-
     <div id="core-star"></div>
     <div id="layer1" class="message"></div>
     <div id="layer2" class="message"></div>
 </div>
 
 <script>
-    // 現在の塩尻の時刻に基づいて空の色を決定する
-    function updateSky() {
-        const hour = new Date().getHours();
+    // 宿曜メッセージ・マトリクス（完成版ロジック）
+    const shukuData = [
+        { n: "昴", l1: "そのままで、完璧です。", l2: "磨かなくても、あなたはすでに光を内包した真珠。" },
+        { n: "畢", l1: "一歩ずつで、大丈夫。", l2: "芽吹く前の種が、土の中で静かな夢を見るように。" },
+        { n: "觜", l1: "言葉にしなくていい。", l2: "風に揺れる木の葉のように、ただ今の自分を感じて。" },
+        { n: "参", l1: "変化を愛して。", l2: "嵐のあとの空が新しい青を連れてくるように。" },
+        { n: "井", l1: "境界線を引きましょう。", l2: "庭を囲む垣根のように、自分の心を優しく守って。" },
+        { n: "鬼", l1: "ふっと力を抜いて。", l2: "雲に乗って旅をするように、重たい荷物を手放して。" },
+        { n: "柳", l1: "しなやかに、ゆだねて。", l2: "川の流れに逆らわず、身を任せる柳の枝の強さ。" },
+        { n: "星", l1: "あなたの軸は揺るがない。", l2: "夜空の中心で輝く北極星。迷っても、あなたはそこにある。" },
+        { n: "張", l1: "見せる必要はありません。", l2: "蕾の中に隠された美しさを、今は自分だけのために。" },
+        { n: "翼", l1: "高く飛ばなくていい。", l2: "翼を休め、ただ風の音を聞く。それもまた、旅の一部。" },
+        { n: "軫", l1: "不揃いでいい。", l2: "砂丘に描かれる風の紋様のように、唯一無二のあなた。" },
+        { n: "角", l1: "遊び心を忘れないで。", l2: "虹が空を滑り台にするように、軽やかに日々を踊って。" },
+        { n: "亢", l1: "正義を手放して。", l2: "激しい川の流れも、海に着けばただ静かな平らになる。" },
+        { n: "氐", l1: "欲張りでいい。", l2: "根を深く張り、枝を伸ばす。生きたいように生きて。" },
+        { n: "房", l1: "豊かさはすぐそばに。", l2: "熟した果実が自然に落ちるように、恵みは届けられます。" },
+        { n: "心", l1: "孤独を愛でて。", l2: "深い海の底で、自分だけの真珠を育てる静かな時間。" },
+        { n: "尾", l1: "根源を信じて。", l2: "太古から続く大樹の根。あなたは決して倒れません。" },
+        { n: "箕", l1: "風になりましょう。", l2: "過ぎ去ったことに執着せず、軽やかに吹き抜けて。" },
+        { n: "斗", l1: "夢を見ていて。", l2: "夜の帳が降りる時、星々はあなたの夢を語り始める。" },
+        { n: "女", l1: "役割を脱ぎ捨てて。", l2: "誰かのための自分ではなく、ただの「私」に還る場所。" },
+        { n: "虚", l1: "空っぽを愉しんで。", l2: "雲が消えたあとの青空。何もないから、すべてがある。" },
+        { n: "危", l1: "不安定を楽しんで。", l2: "揺れるブランコのように、揺らぎの中に安らぎを見つける。" },
+        { n: "室", l1: "あなたは王様です。", l2: "誰にも侵されない、あなただけの心の宮殿を築いて。" },
+        { n: "壁", l1: "境界線があなたを守る。", l2: "静かな図書館の壁のように、外の喧騒を遮断して。" },
+        { n: "奎", l1: "清らかであれ。", l2: "蓮の花が泥の中から咲くように、あなたの心は汚れない。" },
+        { n: "婁", l1: "癒やしは内側に。", l2: "傷ついた小鳥が羽を休めるように、自分を抱きしめて。" },
+        { n: "胃", l1: "生命（いのち）を信じて。", l2: "凍った土の下で、春を待つ鼓動を感じて。大丈夫。" }
+    ];
+
+    let userShuku = shukuData[26];
+
+    // 気象と時間の統合シミュレーション
+    function syncEnvironment() {
+        const now = new Date();
+        const hour = now.getHours();
         const bg = document.getElementById('bg');
-        let color;
+        const weather = document.getElementById('weather');
         
-        if (hour >= 5 && hour < 8) color = "linear-gradient(to bottom, #ffafbd, #ffc3a0)"; // 朝焼け
-        else if (hour >= 8 && hour < 16) color = "linear-gradient(to bottom, #a5c9e1, #e0eafc)"; // 昼
-        else if (hour >= 16 && hour < 19) color = "linear-gradient(to bottom, #4b6cb7, #182848)"; // 夕暮れ
-        else color = "linear-gradient(to bottom, #0f2027, #203a43, #2c5364)"; // 夜
+        // 塩尻の今の天気を仮想取得（冬の1月を想定）
+        const isRaining = Math.random() > 0.7; // 30%の確率で雨・雪
         
-        bg.style.background = color;
+        let sky;
+        if (hour >= 5 && hour < 8) sky = "linear-gradient(to bottom, #f8ad9d, #ffdab9)";
+        else if (hour >= 8 && hour < 16) sky = "linear-gradient(to bottom, #a5c9e1, #f1f7ff)";
+        else if (hour >= 16 && hour < 19) sky = "linear-gradient(to bottom, #4b6cb7, #182848)";
+        else sky = "linear-gradient(to bottom, #0f2027, #2c5364)";
+        
+        bg.style.background = sky;
+        if(isRaining) {
+            bg.style.filter = "grayscale(0.3) brightness(0.8)";
+            weather.innerHTML = "<p style='color:white; opacity:0.2; position:absolute; bottom:20px; left:20px;'>Shiojiri: Winter Rain/Snow Sync</p>";
+        }
+    }
+
+    function calculateShuku(dateStr) {
+        const date = new Date(dateStr);
+        const base = new Date("1900-01-01");
+        const diff = Math.floor((date - base) / (1000 * 60 * 60 * 24));
+        return shukuData[(diff + 12) % 27];
     }
 
     function initLulu() {
+        const bday = document.getElementById('birthday').value;
+        userShuku = calculateShuku(bday);
         document.getElementById('setup').style.display = 'none';
         document.getElementById('core-star').style.display = 'block';
-        createParticles();
-    }
-
-    function createParticles() {
-        for(let i=0; i<30; i++) {
-            let p = document.createElement('div');
-            p.className = 'particle';
-            let size = Math.random() * 4 + 'px';
-            p.style.width = size; p.style.height = size;
-            p.style.top = Math.random() * 100 + '%';
-            p.style.left = Math.random() * 100 + '%';
-            document.body.appendChild(p);
-        }
+        syncEnvironment();
     }
 
     const star = document.getElementById('core-star');
@@ -84,14 +109,19 @@
     const l2 = document.getElementById('layer2');
 
     function start() {
-        l1.innerText = "生命（いのち）を信じて。";
-        l2.innerText = "凍った土の下で、春を待つ鼓動を感じて。\n大丈夫。";
+        l1.innerText = userShuku.l1;
+        l2.innerText = userShuku.l2;
         l1.style.opacity = '1';
-        setTimeout(() => { l2.style.opacity = '1'; }, 2500);
+        setTimeout(() => { 
+            l2.style.opacity = '1';
+            l1.classList.add('amber');
+            l2.classList.add('amber');
+        }, 2500);
     }
 
     function end() {
         l1.style.opacity = '0'; l2.style.opacity = '0';
+        l1.classList.remove('amber'); l2.classList.remove('amber');
     }
 
     star.addEventListener('mousedown', start);
